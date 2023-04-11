@@ -35,6 +35,7 @@ class Compressor
     public bool $shouldCompress = true;
 
     private const DIFFERENCE_BETWEEN_INT_AND_BOOL_SYMBOL = 2;
+    private const DIFFERENCE_BETWEEN_FIELD_AND_ALIAS = '$';
 
     /**
      * Помимо стандартной компресси с помощью gzip, я подумал что неплохо было бы поубавить длинну символов в словах true и false.
@@ -58,19 +59,19 @@ class Compressor
                 $aliases = $this->getAliases();
 
                 if (array_key_exists($key, $aliases)) {
-                    $key = '$' . $aliases[$key];
+                    $key = static::DIFFERENCE_BETWEEN_FIELD_AND_ALIAS . $aliases[$key];
                 }
             }
 
             $tightObjectArray[$key] = $value;
         }
 
-        $objectJson = json_encode($tightObjectArray);
+        $tightObjectJson = json_encode($tightObjectArray);
 
         if ($this->shouldCompress) {
-            return $this->compressString($objectJson);
+            return $this->compressString($tightObjectJson);
         }
-        return $objectJson;
+        return $tightObjectJson;
     }
 
     public function uncompressObject(string $compressedJsonArray): string
@@ -95,7 +96,7 @@ class Compressor
 
             if ($this->useAliases) {
                 $aliases = $this->getAliases();
-                $key = strtok($key, '$');
+                $key = strtok($key, static::DIFFERENCE_BETWEEN_FIELD_AND_ALIAS);
 
                 if (in_array($key, array_values($aliases), true)) {
                     $key = array_search($key, $aliases, true);
