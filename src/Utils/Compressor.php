@@ -34,6 +34,8 @@ class Compressor
     public bool $lossless = false;
     public bool $shouldCompress = true;
 
+    private const DIFFERENCE_BETWEEN_INT_AND_BOOL_SYMBOL = 2;
+
     /**
      * Помимо стандартной компресси с помощью gzip, я подумал что неплохо было бы поубавить длинну символов в словах true и false.
      * Самое лучшее как по мне решение - скасить их в int. Но тут появляется проблема, что если у нас есть int со значениями
@@ -46,7 +48,7 @@ class Compressor
 
         foreach ($objectArray as $key => $value) {
             if ($this->lossless && is_int($value)) {
-                $value = (int)(2 . $value);
+                $value = (int)(static::DIFFERENCE_BETWEEN_INT_AND_BOOL_SYMBOL . $value);
             }
             if (is_bool($value)) {
                 $value = (int)$value;
