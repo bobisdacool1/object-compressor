@@ -3,7 +3,8 @@
   "type" : "library",
   "autoload" : {
     "psr-4" : {
-      "Bobisdaccol1\\ObjectCompressor\\" : "src/"
+      "Bobisdaccol1\\ObjectCompressor\\" : "src/",
+      "Bobisdaccol1\\Tests\\" : "tests/"
     }
   },
   "authors" : [
@@ -12,6 +13,9 @@
       "email" : "sinitsin.aleksey2003@yandex.ru"
     }
   ],
+  "require-dev": {
+    "phpunit/phpunit": ">=10.0.19"
+  },
   "require": {
     "ext-json": "*",
     "ext-zlib": "*"

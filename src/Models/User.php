@@ -20,7 +20,7 @@ class User implements ArrayInstantiatableInterface, ArrayableInterface
 
     private int $gender = 0;
     private int $age = 18;
-    private int $credit = 123456;
+    public int $credit = 123456;
 
 
     public function toArray(): array
