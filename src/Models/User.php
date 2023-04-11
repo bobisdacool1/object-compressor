@@ -9,17 +9,17 @@ use Throwable;
 
 class User extends Model
 {
-    private bool $isAdmin = false;
-    private bool $isModerator = true;
-    private bool $isEmailConfirmed = false;
-    private bool $isPhoneConfirmed = false;
-    private bool $isAllowedAdultContent = false;
-    private bool $isArmored = true;
-    private bool $hasSmokeGrenade = false;
-    private bool $canFly = true;
+    public bool $isAdmin = false;
+    public bool $isModerator = true;
+    public bool $isEmailConfirmed = false;
+    public bool $isPhoneConfirmed = false;
+    public bool $isAllowedAdultContent = false;
+    public bool $isArmored = true;
+    public bool $hasSmokeGrenade = false;
+    public bool $canFly = true;
 
-    private int $gender = 0;
-    private int $age = 18;
+    public int $gender = 0;
+    public int $age = 18;
     public int $credit = 123456;
 
 }
