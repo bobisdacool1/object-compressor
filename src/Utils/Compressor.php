@@ -17,7 +17,7 @@ use Bobisdaccol1\ObjectCompressor\Interfaces\ArrayableInterface;
  */
 class Compressor
 {
-    public array $keyAliases = [
+    private array $keyAliases = [
         'isAdmin' => 'a',
         'isModerator' => 'm',
         'isEmailConfirmed' => 'ec',
