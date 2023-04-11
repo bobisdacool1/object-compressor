@@ -1,0 +1,15 @@
+{
+  "name" : "bobisdacool1/object-compressor",
+  "type" : "library",
+  "autoload" : {
+    "psr-4" : {
+      "Bobisdaccol1\\ObjectCompressor\\" : "src/"
+    }
+  },
+  "authors" : [
+    {
+      "name" : "bobisdacool1",
+      "email" : "sinitsin.aleksey2003@yandex.ru"
+    }
+  ]
+}
