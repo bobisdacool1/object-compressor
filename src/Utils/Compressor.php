@@ -5,16 +5,6 @@ namespace Bobisdaccol1\ObjectCompressor\Utils;
 
 use Bobisdaccol1\ObjectCompressor\Interfaces\ArrayableInterface;
 
-/**
- * Изначально я предполагаю, что данные нужны не фронту, а беку, скажем, какому нибудь внутреннему микросервису.
- *
- * Основная концепция - конвертировать объект в Json, сжать его по самые помидоры, отдать клиенту.
- * Когда клиенту будет нужны данные объекта, мы расжимаем его и отдаем красивый массивчик.
- *
- * Можно было бы распарсить и создавать объект, тогда бы в строку пришлось добавить имя класса, чтобы мы знали, какой
- * объект создавать.
- *
- */
 class Compressor
 {
     private array $keyAliases = [
@@ -28,6 +18,7 @@ class Compressor
         'canFly' => 'cf',
         'gender' => 'g',
         'credit' => 'c',
+        '123456' => '12'
     ];
 
     public bool $useAliases = true;
@@ -37,36 +28,24 @@ class Compressor
     private const DIFFERENCE_BETWEEN_INT_AND_BOOL_SYMBOL = 2;
     private const DIFFERENCE_BETWEEN_FIELD_AND_ALIAS = '$';
 
-    /**
-     * Помимо стандартной компресси с помощью gzip, я подумал что неплохо было бы поубавить длинну символов в словах true и false.
-     * Самое лучшее как по мне решение - скасить их в int. Но тут появляется проблема, что если у нас есть int со значениями
-     * 1 || 0, то мы не узнаем, какого типа поле. Поэтому пришлось добавить служебную цифру в начало числа, чтобы избежать такого конфуза.
-     */
     public function compressObject(ArrayableInterface $object): string
     {
         $objectArray = $object->toArray();
         $tightObjectArray = [];
 
-        foreach ($objectArray as $key => $value) {
-            if ($this->lossless && is_int($value)) {
-                $value = (int)(static::DIFFERENCE_BETWEEN_INT_AND_BOOL_SYMBOL . $value);
-            }
-            if (is_bool($value)) {
-                $value = (int)$value;
-            }
+        foreach ($objectArray as $key => $field) {
+            $field = $this->tightObjectField($field);
 
             if ($this->useAliases) {
-                $aliases = $this->getAliases();
-
-                if (array_key_exists($key, $aliases)) {
-                    $key = static::DIFFERENCE_BETWEEN_FIELD_AND_ALIAS . $aliases[$key];
-                }
+                $key = $this->tryEscapeAliases($key);
+                $field = $this->tryEscapeAliases($field);
             }
 
-            $tightObjectArray[$key] = $value;
+            $tightObjectArray[$key] = $field;
         }
 
         $tightObjectJson = json_encode($tightObjectArray);
+        $tightObjectJson = $this->escapeServiceSymbolsInJson($tightObjectJson);
 
         if ($this->shouldCompress) {
             return $this->compressString($tightObjectJson);
@@ -77,33 +56,25 @@ class Compressor
     public function uncompressObject(string $compressedJsonArray): string
     {
         if ($this->shouldCompress) {
-            $tightObjectInJson = $this->uncompressString($compressedJsonArray);
+            $tightObjectJson = $this->uncompressString($compressedJsonArray);
         } else {
-            $tightObjectInJson = $compressedJsonArray;
+            $tightObjectJson = $compressedJsonArray;
         }
 
-        $tightObjectInArray = json_decode($tightObjectInJson, true);
+        $tightObjectJson = $this->unescapeQuotesInJson($tightObjectJson);
+
+        $tightObjectInArray = json_decode($tightObjectJson, true);
         $objectArray = [];
 
-        foreach ($tightObjectInArray as $key => $value) {
-            if ($value === 0 || $value === 1) {
-                $value = (bool)$value;
-            }
-
-            if ($this->lossless && is_int($value)) {
-                $value = (int)substr($value, 1);
-            }
+        foreach ($tightObjectInArray as $key => $field) {
+            $field = $this->untightObjectField($field);
 
             if ($this->useAliases) {
-                $aliases = $this->getAliases();
-                $key = strtok($key, static::DIFFERENCE_BETWEEN_FIELD_AND_ALIAS);
-
-                if (in_array($key, array_values($aliases), true)) {
-                    $key = array_search($key, $aliases, true);
-                }
+                $field = $this->tryUnescapeAliases($field);
+                $key = $this->tryUnescapeAliases($key);
             }
 
-            $objectArray[$key] = $value;
+            $objectArray[$key] = $field;
         }
 
         return json_encode($objectArray);
@@ -122,5 +93,69 @@ class Compressor
     protected function getAliases(): array
     {
         return $this->keyAliases;
+    }
+
+    private function escapeServiceSymbolsInJson(string $string): string
+    {
+        return preg_replace('%[{}"]%', '', $string);
+    }
+
+    private function unescapeQuotesInJson(string $string): string
+    {
+        $unescapedString = '"' . $string;
+        $unescapedString = preg_replace('%:%', '":', $unescapedString);
+        $unescapedString = preg_replace('%,%', '",', $unescapedString);
+
+        $unescapedString = '{' . $unescapedString . '}';
+
+        return $unescapedString;
+    }
+
+    private function tightObjectField(mixed $field): string
+    {
+        if ($this->lossless && is_int($field)) {
+            $field = (int)(static::DIFFERENCE_BETWEEN_INT_AND_BOOL_SYMBOL . $field);
+        }
+        if (is_bool($field)) {
+            $field = (int)$field;
+        }
+
+        return $field;
+    }
+
+    private function tryEscapeAliases(string $value): string
+    {
+        $aliases = $this->getAliases();
+
+        if (array_key_exists($value, $aliases)) {
+            $value = static::DIFFERENCE_BETWEEN_FIELD_AND_ALIAS . $aliases[$value];
+        }
+
+        return $value;
+    }
+
+    private function tryUnescapeAliases(string $value): string
+    {
+        $aliases = $this->getAliases();
+        $value = strtok($value, static::DIFFERENCE_BETWEEN_FIELD_AND_ALIAS);
+
+        if (in_array($value, array_values($aliases), true)) {
+            $value = array_search($value, $aliases, true);
+        }
+
+        return $value;
+    }
+
+    private function untightObjectField(mixed $field): mixed
+    {
+        if ($field === 0 || $field === 1) {
+            $field = (bool)$field;
+        }
+
+        if ($this->lossless && is_int($field)) {
+            $field = (int)substr($field, 1);
+        }
+
+        return $field;
     }
 }
