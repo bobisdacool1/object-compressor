@@ -2,14 +2,9 @@
 
 namespace Bobisdaccol1\ObjectCompressor\Models;
 
-
-use Bobisdaccol1\ObjectCompressor\Traits\Arrayable;
-use Bobisdaccol1\ObjectCompressor\Traits\ArrayInstantiatable;
-use Throwable;
-
-class User extends Model
+class User
 {
-    public bool $isAdmin = false;
+    public bool $isAdmin = true;
     public bool $isModerator = true;
     public bool $isEmailConfirmed = false;
     public bool $isPhoneConfirmed = false;
@@ -18,8 +13,16 @@ class User extends Model
     public bool $hasSmokeGrenade = false;
     public bool $canFly = true;
 
-    public int $gender = 0;
-    public int $age = 18;
-    public int $credit = 123456;
+//    public int $gender = 0;
+//    public int $age = 18;
+//    public int $credit = 123456;
 
+    public function toArray(): array
+    {
+        $objectInArray = [];
+        foreach ($this as $key => $value) {
+            $objectInArray[$key] = $value;
+        }
+        return $objectInArray;
+    }
 }
