@@ -8,14 +8,46 @@ use Bobisdaccol1\ObjectCompressor\Models\User;
 class Compressor
 {
     private array $keyAliases = [
-        'isAdmin' => '1',
-        'isModerator' => '10',
-        'isEmailConfirmed' => '11',
-        'isPhoneConfirmed' => '100',
-        'isAllowedAdultContent' => '101',
-        'isArmored' => '110',
-        'hasSmokeGrenade' => '111',
-        'canFly' => '1000',
+        [
+            'key' => 'isAdmin',
+            'alias' => '1',
+            'type' => 'boolean'
+        ],
+        [
+            'key' => 'isModerator',
+            'alias' => '10',
+            'type' => 'boolean'
+        ],
+        [
+            'key' => 'isEmailConfirmed',
+            'alias' => '11',
+            'type' => 'boolean'
+        ],
+        [
+            'key' => 'isPhoneConfirmed',
+            'alias' => '100',
+            'type' => 'boolean'
+        ],
+        [
+            'key' => 'isAllowedAdultContent',
+            'alias' => '101',
+            'type' => 'boolean'
+        ],
+        [
+            'key' => 'isArmored',
+            'alias' => '110',
+            'type' => 'boolean'
+        ],
+        [
+            'key' => 'hasSmokeGrenade',
+            'alias' => '111',
+            'type' => 'boolean'
+        ],
+        [
+            'key' => 'canFly',
+            'alias' => '1000',
+            'type' => 'boolean'
+        ],
     ];
 
     public function compress(User $user): int
@@ -24,7 +56,7 @@ class Compressor
         $compressedUser = '';
 
         foreach ($userFields as $key => $field) {
-            $key = $this->keyAliases[$key];
+            $key = $this->searchInAliasesByKey($key)['alias'];
             $value = (int)$field;
             $compressedUser .= $key . $value;
         }
@@ -42,19 +74,22 @@ class Compressor
         $lengthOfKey = 0;
         $lengthOfValue = 1;
 
-        $fieldBinaryKey = '';
+        $binaryKey = '';
 
         for ($i = 0; $i < strlen($binaryFields); $i += $lengthOfKey + $lengthOfValue) {
-            $lengthOfKey += $this->shouldIncrement($fieldBinaryKey);
+            $lengthOfKey += $this->shouldIncrement($binaryKey);
 
-            $fieldBinaryKey = '';
+            $binaryKey = '';
             for ($j = 0; $j < $lengthOfKey; $j++) {
-                $fieldBinaryKey .= $binaryFields[$j + $i];
+                $binaryKey .= $binaryFields[$j + $i];
             }
+
+            $fieldInformation = $this->searchInAliasesByAlias($binaryKey);
+            $trueKey = $fieldInformation['key'];
+
             $binaryValue = $binaryFields[$i + $lengthOfKey];
 
-            $trueKey = array_search($fieldBinaryKey, $this->keyAliases, true);
-            $trueFields[$trueKey] = (bool) $binaryValue;
+            $trueFields[$trueKey] = (bool)$binaryValue;
         }
         return $trueFields;
     }
@@ -62,5 +97,27 @@ class Compressor
     private function shouldIncrement(string $binaryObjectKey): bool
     {
         return str_replace('1', '', $binaryObjectKey) === "";
+    }
+
+    private function searchInAliasesByAlias(string $binaryValue): array
+    {
+        foreach ($this->keyAliases as $alias) {
+            if ($alias['alias'] === $binaryValue) {
+                return $alias;
+            }
+        }
+
+        return [];
+    }
+
+    private function searchInAliasesByKey(string $binary): array
+    {
+        foreach ($this->keyAliases as $alias) {
+            if ($alias['key'] === $binary) {
+                return $alias;
+            }
+        }
+
+        return [];
     }
 }
