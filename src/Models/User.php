@@ -2,27 +2,18 @@
 
 namespace Bobisdaccol1\ObjectCompressor\Models;
 
-class User
+class User extends Model
 {
-    public bool $isAdmin = true;
-    public bool $isModerator = true;
-    public bool $isEmailConfirmed = false;
-    public bool $isPhoneConfirmed = false;
-    public bool $isAllowedAdultContent = false;
-    public bool $isArmored = true;
-    public bool $hasSmokeGrenade = false;
-    public bool $canFly = true;
+    protected bool $isAdmin = true;
+    protected bool $isModerator = true;
+    protected bool $isEmailConfirmed = false;
+    protected bool $isPhoneConfirmed = false;
+    protected bool $isAllowedAdultContent = false;
+    protected bool $isArmored = true;
+    protected bool $hasSmokeGrenade = false;
+    protected bool $canFly = true;
 
 //    public int $gender = 0;
 //    public int $age = 18;
 //    public int $credit = 123456;
-
-    public function toArray(): array
-    {
-        $objectInArray = [];
-        foreach ($this as $key => $value) {
-            $objectInArray[$key] = $value;
-        }
-        return $objectInArray;
-    }
 }

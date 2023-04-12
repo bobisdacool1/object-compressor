@@ -2,7 +2,7 @@
 namespace Bobisdaccol1\Tests;
 
 use Bobisdaccol1\ObjectCompressor\Models\User;
-use Bobisdaccol1\ObjectCompressor\Utils\Compressor;
+use Bobisdaccol1\ObjectCompressor\Utils\Compressor\Compressor;
 use PHPUnit\Framework\TestCase;
 
 class TestCompressor extends TestCase
