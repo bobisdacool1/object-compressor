@@ -5,7 +5,6 @@ require_once(__DIR__ . '\..\vendor\autoload.php');
 use Bobisdaccol1\ObjectCompressor\Models\User;
 use Bobisdaccol1\ObjectCompressor\Utils\Compressor;
 
-
 $user = new User();
 $compressor = new Compressor();
 
@@ -21,4 +20,11 @@ function dd(...$vars)
         var_dump($var);
     }
     die();
+}
+
+function dump(...$vars)
+{
+    foreach ($vars as $var) {
+        var_dump($var);
+    }
 }

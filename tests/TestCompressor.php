@@ -12,11 +12,9 @@ class TestCompressor extends TestCase
         $user = new User();
         $compressor = new Compressor();
 
-        $compressedUserFields = $compressor->compressObject($user);
+        $compressedUser = $compressor->compress($user);
+        $uncompressedUser = $compressor->uncompress($compressedUser);
 
-        $uncompressedUserFields = $compressor->uncompressObject($compressedUserFields);
-        $uncompressedUser = User::fromArray(json_decode($uncompressedUserFields, true));
-
-        $this->assertEquals($user, $uncompressedUser);
+        $this->assertEquals($user->toArray(), $uncompressedUser);
     }
 }

@@ -8,20 +8,20 @@ use Bobisdaccol1\ObjectCompressor\Models\User;
 class Compressor
 {
     private array $keyAliases = [
-        'isAdmin' => '0000',
-        'isModerator' => '0001',
-        'isEmailConfirmed' => '0010',
-        'isPhoneConfirmed' => '0011',
-        'isAllowedAdultContent' => '0100',
-        'isArmored' => '0101',
-        'hasSmokeGrenade' => '0110',
-        'canFly' => '0111',
+        'isAdmin' => '1',
+        'isModerator' => '10',
+        'isEmailConfirmed' => '11',
+        'isPhoneConfirmed' => '100',
+        'isAllowedAdultContent' => '101',
+        'isArmored' => '110',
+        'hasSmokeGrenade' => '111',
+        'canFly' => '1000',
     ];
 
     public function compress(User $user): int
     {
         $userFields = $user->toArray();
-        $compressedUser = '1';
+        $compressedUser = '';
 
         foreach ($userFields as $key => $field) {
             $key = $this->keyAliases[$key];
@@ -29,26 +29,38 @@ class Compressor
             $compressedUser .= $key . $value;
         }
 
+
         return bindec($compressedUser);
     }
 
     public function uncompress(int $compressedUser): array
     {
         $binaryFields = decbin($compressedUser);
-        $binaryFields = substr($binaryFields, 1);
+
         $trueFields = [];
 
-        for ($i = 0, $iMax = strlen($binaryFields); $i < $iMax; $i += 5) {
-            $binaryObjectKey = '';
-            for ($j = 0; $j < 4; $j++) {
-                $binaryObjectKey .= $binaryFields[$j + $i];
+        $lengthOfKey = 0;
+        $lengthOfValue = 1;
+
+        $fieldBinaryKey = '';
+
+        for ($i = 0; $i < strlen($binaryFields); $i += $lengthOfKey + $lengthOfValue) {
+            $lengthOfKey += $this->shouldIncrement($fieldBinaryKey);
+
+            $fieldBinaryKey = '';
+            for ($j = 0; $j < $lengthOfKey; $j++) {
+                $fieldBinaryKey .= $binaryFields[$j + $i];
             }
-            $binaryValue = $binaryFields[$i + 4];
+            $binaryValue = $binaryFields[$i + $lengthOfKey];
 
-            $trueKey = array_search($binaryObjectKey, $this->keyAliases, true);
-            $trueFields[$trueKey] = $binaryValue;
+            $trueKey = array_search($fieldBinaryKey, $this->keyAliases, true);
+            $trueFields[$trueKey] = (bool) $binaryValue;
         }
-
         return $trueFields;
+    }
+
+    private function shouldIncrement(string $binaryObjectKey): bool
+    {
+        return str_replace('1', '', $binaryObjectKey) === "";
     }
 }
