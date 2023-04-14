@@ -28,11 +28,20 @@ class Compressor
 
             $compressedField .= $binaryValue;
         }
+
+        if ($this->protocol->gzipCompressLevel !== 0) {
+            $compressedField = gzcompress($compressedField, $this->protocol->gzipCompressLevel);
+        }
+
         return $compressedField;
     }
 
     public function uncompress(string $compressed): array
     {
+        if ($this->protocol->gzipCompressLevel > 0) {
+            $compressed = gzuncompress($compressed);
+        }
+
         $protocolItems = $this->protocol->getItems();
         $outArray = [];
         foreach ($protocolItems as $protocolItem) {

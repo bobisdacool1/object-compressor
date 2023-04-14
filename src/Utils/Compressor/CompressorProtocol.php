@@ -11,9 +11,15 @@ class CompressorProtocol
      * @var ProtocolItem[]
      */
     private array $protocolItems = [];
+    public readonly int $gzipCompressLevel;
 
-    public function __construct(array|ArrayableInterface $array)
+    /**
+     * @throws Exception
+     */
+    public function __construct(array|ArrayableInterface $array, int $gzipCompressLevel = 9)
     {
+        $this->gzipCompressLevel = $gzipCompressLevel;
+
         if ($array instanceof ArrayableInterface) {
             $array = $array->toArray();
         }
@@ -23,7 +29,10 @@ class CompressorProtocol
 
         foreach ($array as $key => $value) {
             if (is_array($value)) {
-                throw new Exception('Nested arrays not implemented!');
+                throw new Exception('Nested arrays are not implemented!');
+            }
+            if (is_string($value)) {
+                throw new Exception('Strings are not implemented!');
             }
 
             $valueType = $this->getValueTypeByValue($value);
@@ -62,7 +71,8 @@ class CompressorProtocol
     private function getBinaryValueLengthByType(CompressorVariableTypes $type): int
     {
         return match($type) {
-            CompressorVariableTypes::Int => 64,
+            CompressorVariableTypes::Int,
+            CompressorVariableTypes::Float => 64,
             default => 1,
         };
     }
