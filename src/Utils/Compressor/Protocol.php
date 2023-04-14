@@ -5,21 +5,18 @@ namespace Bobisdaccol1\ObjectCompressor\Utils\Compressor;
 use Bobisdaccol1\ObjectCompressor\Interfaces\ArrayableInterface;
 use Exception;
 
-class CompressorProtocol
+class Protocol
 {
     /**
      * @var ProtocolItem[]
      */
     private array $protocolItems = [];
-    public readonly int $gzipCompressLevel;
 
     /**
      * @throws Exception
      */
-    public function __construct(array|ArrayableInterface $array, int $gzipCompressLevel = 9)
+    public function __construct(array|ArrayableInterface $array)
     {
-        $this->gzipCompressLevel = $gzipCompressLevel;
-
         if ($array instanceof ArrayableInterface) {
             $array = $array->toArray();
         }
@@ -60,19 +57,15 @@ class CompressorProtocol
     private function getValueTypeByValue(mixed $value): CompressorVariableTypes
     {
         return match (gettype($value)) {
-            'string' => CompressorVariableTypes::String,
             'integer' => CompressorVariableTypes::Int,
-            'double' => CompressorVariableTypes::Float,
-            'boolean' => CompressorVariableTypes::Bool,
-            default => CompressorVariableTypes::Null,
+            default => CompressorVariableTypes::Bool,
         };
     }
 
     private function getBinaryValueLengthByType(CompressorVariableTypes $type): int
     {
         return match($type) {
-            CompressorVariableTypes::Int,
-            CompressorVariableTypes::Float => 64,
+            CompressorVariableTypes::Int => 64,
             default => 1,
         };
     }
