@@ -14,7 +14,7 @@ class Compressor
         $this->protocol = $protocol;
     }
 
-    public function compress(ArrayableInterface|array $array): int
+    public function compress(ArrayableInterface|array $array): string
     {
         if ($array instanceof ArrayableInterface) {
             $array = $array->toArray();
@@ -22,29 +22,23 @@ class Compressor
 
         $compressedField = '1';
         foreach ($array as $key => $value) {
-            $protocol = $this->protocol->getProtocolItemByKey($key);
+            $protocolItem = $this->protocol->getProtocolItemByKey($key);
 
-            $binaryValue = $this->getBinaryValueByValue($value);
-            $binaryValue = str_split($binaryValue);
+            $binaryValue = $this->getBinaryByReal($value, $protocolItem);
 
-            foreach ($binaryValue as $index => $binary) {
-                $compressedField[$index + $protocol->binaryValuePosition] = $this->getBinaryValueByValue($value);
-            }
+            $compressedField .= $binaryValue;
         }
-
-        return (int)$compressedField;
+        return $compressedField;
     }
 
-    public function uncompress(int $compressed): array
+    public function uncompress(string $compressed): array
     {
-        $compressed = (string)$compressed;
-
         $protocolItems = $this->protocol->getItems();
         $outArray = [];
         foreach ($protocolItems as $protocolItem) {
             $realKey = $protocolItem->realKey;
             $binaryValue = substr($compressed, $protocolItem->binaryValuePosition, $protocolItem->binaryValueLength);
-            $realValue = $this->getRealValue($protocolItem, $binaryValue);
+            $realValue = $this->getRealByBinary($protocolItem, $binaryValue);
 
             $outArray[$realKey] = $realValue;
         }
@@ -52,20 +46,35 @@ class Compressor
         return $outArray;
     }
 
-    private function getBinaryValueByValue(mixed $value): string
+    private function getBinaryByReal(mixed $value, ProtocolItem $protocolItem): string
     {
         return match (gettype($value)) {
             'boolean' => (string)(int)$value,
-            'integer', 'double' => (string)decbin($value),
+            'integer', 'double' => $this->castToProtocolLength(decbin($value), $protocolItem),
             default => $value,
         };
     }
 
-    private function getRealValue(ProtocolItem $protocolItem, string $binaryValue): mixed
+    private function getRealByBinary(ProtocolItem $protocolItem, string $binaryValue): mixed
     {
         return match ($protocolItem->binaryValueType) {
-            CompressorVariableTypes::Bool => (bool) $binaryValue,
+            CompressorVariableTypes::Bool => (bool)$binaryValue,
+
+            CompressorVariableTypes::Int,
+            CompressorVariableTypes::Float => bindec($binaryValue),
             default => null,
         };
+    }
+
+    private function castToProtocolLength(string $binaryValue, ProtocolItem $protocolItem): string
+    {
+        $neededLength = $protocolItem->binaryValueLength;
+        $actualLength = strlen($binaryValue);
+        $neededZeroesAmount = $neededLength - $actualLength;
+
+        if ($neededZeroesAmount > 0) {
+            $binaryValue = str_repeat(0, $neededZeroesAmount) . $binaryValue;
+        }
+        return $binaryValue;
     }
 }

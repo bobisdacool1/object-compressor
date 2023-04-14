@@ -18,7 +18,8 @@ class CompressorProtocol
             $array = $array->toArray();
         }
 
-        $binaryValuePosition = 0;
+        $binaryValuePosition = 1;
+        $binaryValueLength = 0;
 
         foreach ($array as $key => $value) {
             if (is_array($value)) {
@@ -26,8 +27,8 @@ class CompressorProtocol
             }
 
             $valueType = $this->getValueTypeByValue($value);
-            $binaryValueLength = $this->getBinaryValueLengthByType($valueType);
             $binaryValuePosition += $binaryValueLength;
+            $binaryValueLength = $this->getBinaryValueLengthByType($valueType);
 
             $this->protocolItems[] = new ProtocolItem($key, $valueType, $binaryValuePosition, $binaryValueLength);
         }
@@ -61,7 +62,8 @@ class CompressorProtocol
     private function getBinaryValueLengthByType(CompressorVariableTypes $type): int
     {
         return match($type) {
-           default => 1,
+            CompressorVariableTypes::Int => 64,
+            default => 1,
         };
     }
 
