@@ -4,7 +4,7 @@ namespace Bobisdaccol1\ObjectCompressor\Models;
 
 class User extends Model
 {
-    protected bool $isAdmin = true;
+    protected bool $isAdmin = false;
     protected bool $isModerator = true;
     protected bool $isEmailConfirmed = false;
     protected bool $isPhoneConfirmed = false;
@@ -12,6 +12,7 @@ class User extends Model
     protected bool $isArmored = true;
     protected bool $hasSmokeGrenade = false;
     protected bool $canFly = true;
+    protected bool $isHomo = true;
 
 //    public int $gender = 0;
 //    public int $age = 18;

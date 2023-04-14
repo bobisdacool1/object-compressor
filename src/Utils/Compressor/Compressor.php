@@ -7,81 +7,65 @@ use Bobisdaccol1\ObjectCompressor\Interfaces\ArrayableInterface;
 
 class Compressor
 {
-    private array $keyAliases;
+    private CompressorProtocol $protocol;
 
-    public function __construct()
+    public function __construct(CompressorProtocol $protocol)
     {
-        $aliasesFetcher = new AliasesRepository();
-        $this->keyAliases = $aliasesFetcher->fetchAliases();
+        $this->protocol = $protocol;
     }
 
-    public function compress(ArrayableInterface $arrayableObject): int
+    public function compress(ArrayableInterface|array $array): int
     {
-        $compressedObject = '';
-        $fields = $arrayableObject->toArray();
-
-        foreach ($fields as $key => $field) {
-            $key = $this->searchInAliasesByKey($key)->keyAlias;
-            $value = (int)$field;
-            $compressedObject .= $key . $value;
+        if ($array instanceof ArrayableInterface) {
+            $array = $array->toArray();
         }
 
+        $compressedField = '1';
+        foreach ($array as $key => $value) {
+            $protocol = $this->protocol->getProtocolItemByKey($key);
 
-        return bindec($compressedObject);
-    }
+            $binaryValue = $this->getBinaryValueByValue($value);
+            $binaryValue = str_split($binaryValue);
 
-    public function uncompress(int $compressedObject): array
-    {
-        $binaryFields = decbin($compressedObject);
-
-        $trueFields = [];
-
-        $lengthOfKey = 0;
-        $lengthOfValue = 1;
-
-        $binaryKey = '';
-
-        for ($i = 0; $i < strlen($binaryFields); $i += $lengthOfKey + $lengthOfValue) {
-            $lengthOfKey += $this->shouldIncrement($binaryKey);
-
-            $binaryKey = '';
-            for ($j = 0; $j < $lengthOfKey; $j++) {
-                $binaryKey .= $binaryFields[$j + $i];
-            }
-            $realKey = $this->searchInAliasesByAlias($binaryKey)->key;
-
-            $binaryValue = $binaryFields[$i + $lengthOfKey];
-            $realValue = (bool)$binaryValue;
-
-            $trueFields[$realKey] = $realValue;
-        }
-        return $trueFields;
-    }
-
-    private function shouldIncrement(string $binaryObjectKey): bool
-    {
-        return str_replace('1', '', $binaryObjectKey) === "";
-    }
-
-    private function searchInAliasesByAlias(string $binaryKey): ?CompressorAlias
-    {
-        foreach ($this->keyAliases as $alias) {
-            if ($alias->keyAlias === $binaryKey) {
-                return $alias;
+            foreach ($binaryValue as $index => $binary) {
+                $compressedField[$index + $protocol->binaryValuePosition] = $this->getBinaryValueByValue($value);
             }
         }
 
-        return null;
+        return (int)$compressedField;
     }
 
-    private function searchInAliasesByKey(string $key): ?CompressorAlias
+    public function uncompress(int $compressed): array
     {
-        foreach ($this->keyAliases as $alias) {
-            if ($alias->key === $key) {
-                return $alias;
-            }
+        $compressed = (string)$compressed;
+
+        $protocolItems = $this->protocol->getItems();
+        $outArray = [];
+        foreach ($protocolItems as $protocolItem) {
+            $realKey = $protocolItem->realKey;
+            $binaryValue = substr($compressed, $protocolItem->binaryValuePosition, $protocolItem->binaryValueLength);
+            $realValue = $this->getRealValue($protocolItem, $binaryValue);
+
+            $outArray[$realKey] = $realValue;
         }
 
-        return null;
+        return $outArray;
+    }
+
+    private function getBinaryValueByValue(mixed $value): string
+    {
+        return match (gettype($value)) {
+            'boolean' => (string)(int)$value,
+            'integer', 'double' => (string)decbin($value),
+            default => $value,
+        };
+    }
+
+    private function getRealValue(ProtocolItem $protocolItem, string $binaryValue): mixed
+    {
+        return match ($protocolItem->binaryValueType) {
+            CompressorVariableTypes::Bool => (bool) $binaryValue,
+            default => null,
+        };
     }
 }
